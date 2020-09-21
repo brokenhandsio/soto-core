@@ -109,7 +109,7 @@ struct ECSMetaDataClient: MetaDataClient {
     }
 
     func getMetaData(on eventLoop: EventLoop, context: Context) -> EventLoopFuture<ECSMetaData> {
-        return request(url: endpointURL, timeout: 2, on: eventLoop, logger: context.logger)
+        return request(url: endpointURL, timeout: 2, on: eventLoop, context: context)
             .flatMapThrowing { response in
                 guard let body = response.body else {
                     throw MetaDataClientError.missingMetaData
@@ -118,13 +118,13 @@ struct ECSMetaDataClient: MetaDataClient {
             }
     }
 
-    private func request(url: String, timeout: TimeInterval, on eventLoop: EventLoop, logger: Logger) -> EventLoopFuture<AWSHTTPResponse> {
+    private func request(url: String, timeout: TimeInterval, on eventLoop: EventLoop, context: Context) -> EventLoopFuture<AWSHTTPResponse> {
         let request = AWSHTTPRequest(url: URL(string: url)!, method: .GET, headers: [:], body: .empty)
         return httpClient.execute(
             request: request,
             timeout: TimeAmount.seconds(2),
             on: eventLoop,
-            context: DefaultContext.TODO(logger: logger, "Replace with context passed to credential provider when implemented")
+            context: context
         )
     }
 }
@@ -187,7 +187,7 @@ struct InstanceMetaDataClient: MetaDataClient {
     }
 
     func getMetaData(on eventLoop: EventLoop, context: Context) -> EventLoopFuture<InstanceMetaData> {
-        return getToken(on: eventLoop, logger: context.logger)
+        return getToken(on: eventLoop, context: context)
             .map { token in
                 context.logger.info("Found IMDSv2 token")
                 return HTTPHeaders([(Self.TokenHeaderName, token)])
@@ -206,7 +206,7 @@ struct InstanceMetaDataClient: MetaDataClient {
                     method: .GET,
                     headers: headers,
                     on: eventLoop,
-                    logger: context.logger
+                    context: context
                 ).map { ($0, headers) }
             }
             .flatMapThrowing { (response, headers) -> (String, HTTPHeaders) in
@@ -224,7 +224,7 @@ struct InstanceMetaDataClient: MetaDataClient {
             .flatMap { (roleName, headers) -> EventLoopFuture<AWSHTTPResponse> in
                 // request credentials with the rolename
                 let url = self.credentialURL.appendingPathComponent(roleName)
-                return self.request(url: url, headers: headers, on: eventLoop, logger: context.logger)
+                return self.request(url: url, headers: headers, on: eventLoop, context: context)
             }
             .flatMapThrowing { response in
                 // decode the repsonse payload into the metadata object
@@ -236,13 +236,13 @@ struct InstanceMetaDataClient: MetaDataClient {
             }
     }
 
-    func getToken(on eventLoop: EventLoop, logger: Logger) -> EventLoopFuture<String> {
+    func getToken(on eventLoop: EventLoop, context: Context) -> EventLoopFuture<String> {
         return request(
             url: self.tokenURL,
             method: .PUT,
             headers: HTTPHeaders([Self.TokenTimeToLiveHeader]), timeout: .seconds(2),
             on: eventLoop,
-            logger: logger
+            context: context
         ).flatMapThrowing { response in
             guard response.status == .ok else {
                 throw MetaDataClientError.unexpectedTokenResponseStatus(status: response.status)
@@ -261,14 +261,14 @@ struct InstanceMetaDataClient: MetaDataClient {
         headers: HTTPHeaders = .init(),
         timeout: TimeAmount = .seconds(2),
         on eventLoop: EventLoop,
-        logger: Logger
+        context: Context
     ) -> EventLoopFuture<AWSHTTPResponse> {
         let request = AWSHTTPRequest(url: url, method: method, headers: headers, body: .empty)
         return httpClient.execute(
             request: request,
             timeout: timeout,
             on: eventLoop,
-            context: DefaultContext.TODO(logger: logger, "Replace with context passed to credential provider when implemented")
+            context: context
         )
     }
 }
