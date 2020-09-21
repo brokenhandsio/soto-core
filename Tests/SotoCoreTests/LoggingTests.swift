@@ -29,7 +29,7 @@ class LoggingTests: XCTestCase {
         let client = AWSClient(
             credentialProvider: .static(accessKeyId: "foo", secretAccessKey: "bar"),
             httpClientProvider: .createNew,
-            logger: logger
+            context: context
         )
         defer { XCTAssertNoThrow(try client.syncShutdown()) }
         let config = createServiceConfig(
@@ -72,7 +72,7 @@ class LoggingTests: XCTestCase {
         let client = AWSClient(
             credentialProvider: .static(accessKeyId: "foo", secretAccessKey: "bar"),
             httpClientProvider: .createNew,
-            logger: logger
+            context: context
         )
         defer { XCTAssertNoThrow(try client.syncShutdown()) }
         let config = createServiceConfig(
@@ -107,7 +107,7 @@ class LoggingTests: XCTestCase {
         let client = AWSClient(
             credentialProvider: .static(accessKeyId: "foo", secretAccessKey: "bar"),
             httpClientProvider: .createNew,
-            logger: logger
+            context: context
         )
         defer { XCTAssertNoThrow(try client.syncShutdown()) }
         let config = createServiceConfig(
@@ -135,7 +135,7 @@ class LoggingTests: XCTestCase {
         let client = AWSClient(
             credentialProvider: .static(accessKeyId: "foo", secretAccessKey: "bar"),
             httpClientProvider: .createNew,
-            logger: logger
+            context: context
         )
         defer { XCTAssertNoThrow(try client.syncShutdown()) }
         let config = createServiceConfig(

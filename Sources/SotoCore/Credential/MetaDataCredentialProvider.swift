@@ -31,12 +31,12 @@ import SotoSignerV4
 protocol MetaDataClient: CredentialProvider {
     associatedtype MetaData: ExpiringCredential & Decodable
 
-    func getMetaData(on eventLoop: EventLoop, logger: Logger) -> EventLoopFuture<MetaData>
+    func getMetaData(on eventLoop: EventLoop, context: Context) -> EventLoopFuture<MetaData>
 }
 
 extension MetaDataClient {
-    func getCredential(on eventLoop: EventLoop, logger: Logger) -> EventLoopFuture<Credential> {
-        self.getMetaData(on: eventLoop, logger: logger).map { metaData in
+    func getCredential(on eventLoop: EventLoop, context: Context) -> EventLoopFuture<Credential> {
+        self.getMetaData(on: eventLoop, context: context).map { metaData in
             metaData
         }
     }
@@ -108,8 +108,8 @@ struct ECSMetaDataClient: MetaDataClient {
         self.endpointURL = "\(host)\(relativeURL)"
     }
 
-    func getMetaData(on eventLoop: EventLoop, logger: Logger) -> EventLoopFuture<ECSMetaData> {
-        return request(url: endpointURL, timeout: 2, on: eventLoop, logger: logger)
+    func getMetaData(on eventLoop: EventLoop, context: Context) -> EventLoopFuture<ECSMetaData> {
+        return request(url: endpointURL, timeout: 2, on: eventLoop, logger: context.logger)
             .flatMapThrowing { response in
                 guard let body = response.body else {
                     throw MetaDataClientError.missingMetaData
@@ -186,17 +186,17 @@ struct InstanceMetaDataClient: MetaDataClient {
         self.host = host
     }
 
-    func getMetaData(on eventLoop: EventLoop, logger: Logger) -> EventLoopFuture<InstanceMetaData> {
-        return getToken(on: eventLoop, logger: logger)
+    func getMetaData(on eventLoop: EventLoop, context: Context) -> EventLoopFuture<InstanceMetaData> {
+        return getToken(on: eventLoop, logger: context.logger)
             .map { token in
-                logger.info("Found IMDSv2 token")
+                context.logger.info("Found IMDSv2 token")
                 return HTTPHeaders([(Self.TokenHeaderName, token)])
             }
             .flatMapErrorThrowing { _ in
                 // If we didn't find a session key then assume we are running IMDSv1.
                 // (we could be running from a Docker container and the hop count for the PUT
                 // request is still set to 1)
-                logger.info("Did not find IMDSv2 token, use IMDSv1")
+                context.logger.info("Did not find IMDSv2 token, use IMDSv1")
                 return HTTPHeaders()
             }
             .flatMap { (headers) -> EventLoopFuture<(AWSHTTPResponse, HTTPHeaders)> in
@@ -206,7 +206,7 @@ struct InstanceMetaDataClient: MetaDataClient {
                     method: .GET,
                     headers: headers,
                     on: eventLoop,
-                    logger: logger
+                    logger: context.logger
                 ).map { ($0, headers) }
             }
             .flatMapThrowing { (response, headers) -> (String, HTTPHeaders) in
@@ -224,7 +224,7 @@ struct InstanceMetaDataClient: MetaDataClient {
             .flatMap { (roleName, headers) -> EventLoopFuture<AWSHTTPResponse> in
                 // request credentials with the rolename
                 let url = self.credentialURL.appendingPathComponent(roleName)
-                return self.request(url: url, headers: headers, on: eventLoop, logger: logger)
+                return self.request(url: url, headers: headers, on: eventLoop, logger: context.logger)
             }
             .flatMapThrowing { response in
                 // decode the repsonse payload into the metadata object

@@ -16,7 +16,7 @@ import Logging
 import SotoSignerV4
 
 extension StaticCredential: CredentialProvider {
-    public func getCredential(on eventLoop: EventLoop, logger: Logger) -> EventLoopFuture<Credential> {
+    public func getCredential(on eventLoop: EventLoop, context: Context) -> EventLoopFuture<Credential> {
         eventLoop.makeSucceededFuture(self)
     }
 }

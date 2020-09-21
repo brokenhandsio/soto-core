@@ -12,6 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+import BaggageContext
 import Logging
 import NIO
 import NIOConcurrencyHelpers
@@ -19,7 +20,7 @@ import SotoSignerV4
 
 /// Protocol providing future holding a credential
 public protocol CredentialProvider: CustomStringConvertible {
-    func getCredential(on eventLoop: EventLoop, logger: Logger) -> EventLoopFuture<Credential>
+    func getCredential(on eventLoop: EventLoop, context: Context) -> EventLoopFuture<Credential>
     func shutdown(on eventLoop: EventLoop) -> EventLoopFuture<Void>
 }
 
@@ -34,22 +35,22 @@ extension CredentialProvider {
 /// A helper struct to defer the creation of a `CredentialProvider` until after the AWSClient has been created.
 public struct CredentialProviderFactory {
     /// The initialization context for a `ContextProvider`
-    public struct Context {
+    public struct InitContext {
         /// The `AWSClient`s internal `HTTPClient`
         public let httpClient: AWSHTTPClient
         /// The `EventLoop` that the `CredentialProvider` should use for credential refreshs
         public let eventLoop: EventLoop
-        /// The `Logger` attached to the AWSClient
-        public let logger: Logger
+        /// The Baggage Context used when creating the credential provider
+        public let context: Context
     }
 
-    private let cb: (Context) -> CredentialProvider
+    private let cb: (InitContext) -> CredentialProvider
 
-    private init(cb: @escaping (Context) -> CredentialProvider) {
+    private init(cb: @escaping (InitContext) -> CredentialProvider) {
         self.cb = cb
     }
 
-    internal func createProvider(context: Context) -> CredentialProvider {
+    internal func createProvider(context: InitContext) -> CredentialProvider {
         self.cb(context)
     }
 }
@@ -65,7 +66,7 @@ extension CredentialProviderFactory {
     }
 
     /// Use this method to initialize your custom `CredentialProvider`
-    public static func custom(_ factory: @escaping (Context) -> CredentialProvider) -> CredentialProviderFactory {
+    public static func custom(_ factory: @escaping (InitContext) -> CredentialProvider) -> CredentialProviderFactory {
         Self(cb: factory)
     }
 

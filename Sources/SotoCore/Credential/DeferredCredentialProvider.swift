@@ -42,14 +42,14 @@ public class DeferredCredentialProvider: CredentialProvider {
     /// - Parameters:
     ///   - eventLoop: EventLoop that getCredential should run on
     ///   - provider: Credential provider to wrap
-    public init(context: CredentialProviderFactory.Context, provider: CredentialProvider) {
+    public init(context: CredentialProviderFactory.InitContext, provider: CredentialProvider) {
         self.startupPromise = context.eventLoop.makePromise(of: Credential.self)
         self.provider = provider
-        provider.getCredential(on: context.eventLoop, logger: context.logger)
+        provider.getCredential(on: context.eventLoop, context: context.context)
             .flatMapErrorThrowing { _ in throw CredentialProviderError.noProvider }
             .map { credential in
                 self.credential = credential
-                context.logger.info("AWS credentials ready", metadata: ["aws-credential-provider": .string("\(self)")])
+                context.context.logger.info("AWS credentials ready", metadata: ["aws-credential-provider": .string("\(self)")])
                 return credential
             }
             .cascade(to: self.startupPromise)
@@ -66,7 +66,7 @@ public class DeferredCredentialProvider: CredentialProvider {
     /// otherwise return credentials store in class
     /// - Parameter eventLoop: EventLoop to run off
     /// - Returns: EventLoopFuture that will hold credentials
-    public func getCredential(on eventLoop: EventLoop, logger: Logger) -> EventLoopFuture<Credential> {
+    public func getCredential(on eventLoop: EventLoop, context: Context) -> EventLoopFuture<Credential> {
         if let credential = self.credential {
             return eventLoop.makeSucceededFuture(credential)
         }

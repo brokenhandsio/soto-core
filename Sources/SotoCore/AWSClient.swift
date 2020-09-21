@@ -97,7 +97,7 @@ public final class AWSClient {
         retryPolicy retryPolicyFactory: RetryPolicyFactory = .default,
         middlewares: [AWSServiceMiddleware] = [],
         httpClientProvider: HTTPClientProvider,
-        logger clientLogger: Logger = AWSClient.loggingDisabled
+        context: Context = AWSClient.emptyContext
     ) {
         // setup httpClient
         self.httpClientProvider = httpClientProvider
@@ -111,12 +111,12 @@ public final class AWSClient {
         self.credentialProvider = credentialProviderFactory.createProvider(context: .init(
             httpClient: httpClient,
             eventLoop: httpClient.eventLoopGroup.next(),
-            logger: clientLogger
+            context: context
         ))
 
         self.middlewares = middlewares
         self.retryPolicy = retryPolicyFactory.retryPolicy
-        self.clientLogger = clientLogger
+        self.clientLogger = context.logger
     }
 
     deinit {
@@ -456,7 +456,7 @@ extension AWSClient {
         context.baggage.awsOperation = operationName
         context.baggage.awsRequestId = Self.globalRequestID.add(1)
 
-        let future: EventLoopFuture<Output> = credentialProvider.getCredential(on: eventLoop, logger: context.logger)
+        let future: EventLoopFuture<Output> = credentialProvider.getCredential(on: eventLoop, context: context)
             .flatMapThrowing { credential in
                 let signer = AWSSigner(credentials: credential, name: config.signingName, region: config.region.rawValue)
                 let awsRequest = try createRequest()
@@ -500,7 +500,7 @@ extension AWSClient {
     }
 
     func createSigner(config: AWSServiceConfig, context: Context) -> EventLoopFuture<AWSSigner> {
-        return credentialProvider.getCredential(on: eventLoopGroup.next(), logger: context.logger).map { credential in
+        return credentialProvider.getCredential(on: eventLoopGroup.next(), context: context).map { credential in
             return AWSSigner(credentials: credential, name: config.signingName, region: config.region.rawValue)
         }
     }

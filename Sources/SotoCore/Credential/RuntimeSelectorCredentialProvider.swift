@@ -34,7 +34,7 @@ class RuntimeSelectorCredentialProvider: CredentialProvider {
     private let lock = Lock()
     private var _internalProvider: CredentialProvider?
 
-    init(providers: [CredentialProviderFactory], context: CredentialProviderFactory.Context) {
+    init(providers: [CredentialProviderFactory], context: CredentialProviderFactory.InitContext) {
         self.startupPromise = context.eventLoop.makePromise(of: CredentialProvider.self)
         self.setupInternalProvider(providers: providers, context: context)
     }
@@ -43,19 +43,19 @@ class RuntimeSelectorCredentialProvider: CredentialProvider {
         return self.startupPromise.futureResult.map { _ in }.hop(to: eventLoop)
     }
 
-    func getCredential(on eventLoop: EventLoop, logger: Logger) -> EventLoopFuture<Credential> {
+    func getCredential(on eventLoop: EventLoop, context: Context) -> EventLoopFuture<Credential> {
         if let provider = internalProvider {
-            return provider.getCredential(on: eventLoop, logger: logger)
+            return provider.getCredential(on: eventLoop, context: context)
         }
 
         return self.startupPromise.futureResult.hop(to: eventLoop).flatMap { provider in
-            return provider.getCredential(on: eventLoop, logger: logger)
+            return provider.getCredential(on: eventLoop, context: context)
         }
     }
 
     /// goes through list of providers. If provider is able to provide credentials then use that one, otherwise move onto the next
     /// provider in the list
-    private func setupInternalProvider(providers: [CredentialProviderFactory], context: CredentialProviderFactory.Context) {
+    private func setupInternalProvider(providers: [CredentialProviderFactory], context: CredentialProviderFactory.InitContext) {
         func _setupInternalProvider(_ index: Int) {
             guard index < providers.count else {
                 self.startupPromise.fail(CredentialProviderError.noProvider)
@@ -63,10 +63,10 @@ class RuntimeSelectorCredentialProvider: CredentialProvider {
             }
             let providerFactory = providers[index]
             let provider = providerFactory.createProvider(context: context)
-            provider.getCredential(on: context.eventLoop, logger: context.logger).whenComplete { result in
+            provider.getCredential(on: context.eventLoop, context: context.context).whenComplete { result in
                 switch result {
                 case .success:
-                    context.logger.info("Select credential provider", metadata: ["aws-credential-provider": .string("\(provider)")])
+                    context.context.logger.info("Select credential provider", metadata: ["aws-credential-provider": .string("\(provider)")])
                     self._internalProvider = provider
                     self.startupPromise.succeed(provider)
                 case .failure:
