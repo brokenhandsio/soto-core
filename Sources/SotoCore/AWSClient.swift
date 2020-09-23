@@ -97,7 +97,7 @@ public final class AWSClient {
         retryPolicy retryPolicyFactory: RetryPolicyFactory = .default,
         middlewares: [AWSServiceMiddleware] = [],
         httpClientProvider: HTTPClientProvider,
-        context: Context = AWSClient.emptyContext
+        context: Context = AWSClient.defaultBaggageContext()
     ) {
         // setup httpClient
         self.httpClientProvider = httpClientProvider

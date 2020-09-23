@@ -12,6 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+import BaggageContext
 import Logging
 import NIO
 import NIOConcurrencyHelpers

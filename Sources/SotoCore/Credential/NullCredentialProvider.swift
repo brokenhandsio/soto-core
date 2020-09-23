@@ -12,9 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Logging
+import BaggageContext
 import NIO
-import SotoSignerV4
 
 /// Credential provider that always fails
 public struct NullCredentialProvider: CredentialProvider {

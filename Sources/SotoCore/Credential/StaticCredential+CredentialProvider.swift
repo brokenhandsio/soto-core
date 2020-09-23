@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-import Logging
+import BaggageContext
 import SotoSignerV4
 
 extension StaticCredential: CredentialProvider {

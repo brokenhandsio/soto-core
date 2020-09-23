@@ -12,6 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+import BaggageContext
 import struct Foundation.TimeInterval
 import Logging
 import NIO
