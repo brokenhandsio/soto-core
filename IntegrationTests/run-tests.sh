@@ -60,9 +60,9 @@ plugins_do init "$@"
 shift $plugin_opts_ind
 
 filter="."
-verbose=false
-show_info=false
-debug=false
+verbose=true
+show_info=true
+debug=true
 while getopts "f:vid" opt; do
     case $opt in
         f)
@@ -134,10 +134,8 @@ for f in tests_*; do
     plugins_do test_suite_end "$(time_diff_to_now $start_suite)" "$suite_ok" "$suite_fail"
 done
 
-echo "Debug $debug"
 if ! $debug; then
     rm -rf "$tmp"
-    echo >&2 "debug mode, not deleting '$tmp'"
 else
     echo >&2 "debug mode, not deleting '$tmp'"
 fi
