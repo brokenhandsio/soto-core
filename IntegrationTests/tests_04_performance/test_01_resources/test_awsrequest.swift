@@ -33,7 +33,7 @@ func run(identifier: String) {
     }
     let input = Input(s: "second", i: [1, 2, 4, 8])
     measure(identifier: identifier) {
-        for _ in 0..<1000 {
+        //for i in 0..<5 {
             do {
                 let response: EventLoopFuture<Output> = client.execute(operation: "test", path: "/", httpMethod: .POST, serviceConfig: config, input: input, logger: TestEnvironment.logger)
 
@@ -49,7 +49,7 @@ func run(identifier: String) {
             } catch {
                 
             }
-        }
-        return 1000
+        //}
+        return 1
     }
 }

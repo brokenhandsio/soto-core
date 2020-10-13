@@ -12,13 +12,13 @@
 //
 //===----------------------------------------------------------------------===//
 
+import Foundation
 import NIO
 import NIOFoundationCompat
 import NIOHTTP1
 import NIOTestUtils
 import SotoCore
 import SotoXML
-import XCTest
 
 /// Test server for AWSClient. Input and Output shapes are defined by process function
 public class AWSTestServer {
@@ -29,6 +29,7 @@ public class AWSTestServer {
         case emptyBody
         case noXMLBody
         case corruptChunkedData
+        case writeFail
     }
 
     // what are we returning
@@ -493,7 +494,7 @@ extension AWSTestServer {
             }
             try self.web.writeOutbound(.end(nil))
         } catch {
-            XCTFail("writeResponse failed \(error)")
+            throw Error.writeFail
         }
     }
 
