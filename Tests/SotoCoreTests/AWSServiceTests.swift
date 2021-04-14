@@ -70,7 +70,9 @@ class AWSServiceTests: XCTestCase {
         XCTAssertNotNil(service2.config.middlewares.first { type(of: $0) == TestMiddleware.self })
     }
 
-    #if compiler(>=5.4) && $AsyncAwait
+    #if compiler(>=5.5) && $AsyncAwait
+    
+    @available(macOS 9999, iOS 9999, watchOS 9999, tvOS 9999, *)
     func testSignURL() throws {
         XCTRunAsyncAndBlock {
             let client = createAWSClient(credentialProvider: .static(accessKeyId: "foo", secretAccessKey: "bar"))
@@ -92,6 +94,7 @@ class AWSServiceTests: XCTestCase {
         }
     }
 
+    @available(macOS 9999, iOS 9999, watchOS 9999, tvOS 9999, *)
     func testSignHeaders() throws {
         XCTRunAsyncAndBlock {
             let client = createAWSClient(credentialProvider: .static(accessKeyId: "foo", secretAccessKey: "bar"))
@@ -109,5 +112,5 @@ class AWSServiceTests: XCTestCase {
             XCTAssertNotNil(headers["Authorization"].first)
         }
     }
-    #endif // compiler(>=5.4) && $AsyncAwait
+    #endif // compiler(>=5.5) && $AsyncAwait
 }
